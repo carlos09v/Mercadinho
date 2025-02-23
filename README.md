@@ -26,4 +26,4 @@
         <li>OnRender (HostedServer - Free Plan)</li>
     </ul>
     
-<h2>< ... <a href="https://github.com/carlos09v/Mercadinho/tree/main/_Mercadinho3_0">Mercadinho 3.0</a> > </h2>
+<h3>... <a href="https://github.com/carlos09v/Mercadinho/tree/merc-3.0">Mercadinho 3.0</a> <i>(em Html - Css - JavaScript)</i> </h3>

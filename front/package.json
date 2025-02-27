@@ -42,7 +42,7 @@
     "7": "npm i framer-motion",
     "8": "npm i --save-dev @types/node",
     "9": "npm i react-modal",
-    "10": "npm i --save-dev @types/react-modal",
+    "9/2": "npm i --save-dev @types/react-modal",
     "11": "npm i clsx"
   },
   "_comments": {

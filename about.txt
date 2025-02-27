@@ -32,12 +32,42 @@
 			3.3.1 - @fastify/cors
 			3.3.2 - @fastify/jwt
 		3.4 - zod
-		3.5 - PlanetScale => (DB MySQL na Nuvem)
+		3.5 - Neon? => (DB MySQL com Docker na Nuvem)
  
 3. DB -> Prisma
-	4.1 - Sqlite
+	4.1 - MySQL
 	4.2 - User and Cart models/tables
 
 
 !! Autenticação do lado server (jwt token) e web (cookie) pra ter permissão de fazer requests e acessar páginas
 !! Vite (Env Variables) (import.meta.env.VITE_SOME_KEY)
+-------------------------------
+
+# 2025 Updates (v1.7):
+## ✔️ To-Do:
+- Use MySQL with Docker and host it on a good service (not PlanetScale)
+- Create API documentation with Swagger
+- Fix visual bugs and improve the code
+- Use .env.local and ensure sensitive data is not exposed (even in development)
+
+---
+-> `From GestorDeVeiculo_desafio`:
+## Git (Staging area):
+- git reset head . (remover todos)
+- git add -f <arquivo> (adicionar o que esta untraked)
+
+## Git (Merge):
+- git checkout -b temp-merge  (Crie uma branch temporária)
+- git merge backend --no-ff
+- git merge frontend --no-ff
+
+## Git (usando Stash pra mover arquivos entre branches):
+- git add -f front/.env.local back/.env.local back/docker-compose.yml (Pra adicionar no Staging)
+- git stash push -m "Guardando arquivos não rastreados"
+	- git stash -k (apenas os que estao no staging area)
+- git stash list (ver lista)
+- git stash apply stash@{1} (Se você quiser manter o stash após usá-lo, sem removê-lo da lista de stashes)
+	- git stash pop stash@{1} (aplicar e remover)
+- git stash drop stash@{1} (remover)
+- git reset HEAD front/.env.local back/.env.local back/docker-compose.yml (tirar do staging)
+- git stash show -p stash@{0} ()

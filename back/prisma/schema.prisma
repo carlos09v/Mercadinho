@@ -15,8 +15,10 @@ datasource db {
   // provider     = "sqlite"
   provider     = "mysql"
   url          = env("DATABASE_URL")
-  // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-  relationMode = "prisma" // Connect with PlanetScale
+  /*
+    shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+    relationMode = "prisma" // Connect with PlanetScale
+  */
 }
 
 // Criar Tabelas/Models
@@ -46,8 +48,8 @@ model Cart {
   addedAt      DateTime   @default(now())
 
   // Relacionamentos
-  user       User        @relation(fields: [userId], references: [id])
-  backupCart BackupCart? @relation(fields: [backupCartId], references: [id])
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  backupCart BackupCart? @relation(fields: [backupCartId], references: [id], onDelete: Cascade)
 
   // In MySQL
   @@index([userId])

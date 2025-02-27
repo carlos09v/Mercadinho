@@ -13,14 +13,14 @@ async function bootstrap() {
     })
 
     await fastify.register(cors, {
-        origin: true // Qlquer aplicação pode acessar o back-end
-        // em ambiente dev = true. Em prod é so adicionar os domínios Ex: google.com
+        origin: process.env.CORS_ORIGIN || '*', // Utiliza a variável de ambiente ou um fallback (ex: '*')
+        credentials: true,
+        methods: ['POST', 'PUT', 'GET', 'DELETE']  // Métodos permitidos
     })
 
-    // Em produção isso precisa ser uma variável ambiente
     await fastify.register(jwt, {
-        secret: 'b'
-    })
+        secret: process.env.JWT_SECRET_KEY!
+    });
 
     // http://localhost:3333
 
@@ -30,7 +30,7 @@ async function bootstrap() {
     await fastify.register(userRoutes)
     await fastify.register(cartRoutes)
     
-    await fastify.listen({ port: process.env.PORT || 3333, host: '0.0.0.0' })
+    await fastify.listen({ port: process.env.SERVER_PORT || 3333, host: '0.0.0.0' })
 }
 
 bootstrap()

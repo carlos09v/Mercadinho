@@ -16,8 +16,8 @@ const Home = () => {
 
   useEffect(() => {
     if(!countUser || !countCart ) {
-      getUsersCount()
-      getCartsCount()
+      // getUsersCount()
+      // getCartsCount()
     }
   }, [])
 

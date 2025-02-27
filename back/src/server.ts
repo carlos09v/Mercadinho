@@ -13,15 +13,13 @@ async function bootstrap() {
     })
 
     await fastify.register(cors, {
-        origin: 'https://mercadinho4-0.vercel.app',
-        credentials: true,
-        methods: ['POST', 'PUT', 'GET', 'DELETE'] // Qlquer aplicação pode acessar o back-end
+        origin: true // Qlquer aplicação pode acessar o back-end
         // em ambiente dev = true. Em prod é so adicionar os domínios Ex: google.com
     })
 
     // Em produção isso precisa ser uma variável ambiente
     await fastify.register(jwt, {
-        secret: process.env.JWT_SECRET_KEY! // actually, exclamation (!) says, hey typescript, don't worry, don't check this.
+        secret: 'b'
     })
 
     // http://localhost:3333

@@ -4,11 +4,11 @@ import { toast } from "react-toastify"
 import { parseCookies } from 'nookies'
 import { AiFillCloseSquare } from 'react-icons/ai'
 
-import Input from "../components/Input"
-import Logo from "../components/Logo"
-import LoginSvg from '../assets/unDrawPics/login_re_4vu2.svg'
-import { api, sendEmailApi } from "../lib/axios"
-import { AuthContext } from "../contexts/AuthContext"
+import Input from "../../components/Input"
+import Logo from "../../components/Logo"
+import LoginSvg from '../../assets/unDrawPics/login_re_4vu2.svg'
+import { api, sendEmailApi } from "../../lib/axios"
+import { AuthContext } from "../../contexts/AuthContext"
 import Modal from 'react-modal'
 Modal.setAppElement('#root') // Pegar do root
 
@@ -27,8 +27,7 @@ const Login = () => {
       navigate('/dashboard')
       toast.success('Você está logado !')
     }
-  })
-
+  }, [])
 
   // SignIn
   const handleLogin = (e: FormEvent) => {
@@ -36,41 +35,50 @@ const Login = () => {
 
     // Validadar dados
     if (userDataRegister.email === '' || userDataRegister.password === '') return toast.warn('Preencha todos os campos !')
-
     if (userDataRegister.password.length < 6 || userDataRegister.password.length > 20) return toast.warn('A senha precisa ter entre 6 e 20 caracteres !')
 
     // Logar
     setLoading(true)
-    signIn(userDataRegister)
+    signIn(userDataRegister, navigate)
       .then(res => !res ? setLoading(false) : setLoading(true))
   }
 
   // Enviar senha do usuário pro email
-  const sendEmail = (e: FormEvent, emailUser: string) => {
+  const sendEmail = async (e: FormEvent, emailUser: string) => {
     e.preventDefault()
     let senha: string
 
     if (emailUser === '') return toast.warn('Preencha o campo !')
 
-    setLoading(true)
-    api.post('/forgot-password', {
-      email: emailUser
-    }).then(async (res) => {
-      // console.log(res)
-      senha = res.data.passwordUser.password
-      
+    try {
+      setLoading(true)
+      const { data } = await api.post('/forgot-password', {
+        email: emailUser
+      })
+
+      toast.success('Senha: ' + data.password)
+
+      /*  
       const sendEmailProps = {
         email: emailUser,
         password: senha
       }
+
       await sendEmailApi(sendEmailProps)
-      setLoading(false)
+      */
+
       setShowModal(false)
-    }).catch(err => {
-      // console.log(err)
-      if (err.response) toast.error(err.response.data.message)
-      return setLoading(false)
-    })
+    } catch (err: any) {
+      console.log(err)
+
+      if (err.response) {
+        // Se a resposta da API tem uma mensagem de erro
+        toast.warn('Alerta: ' + err.response.data.message || 'Algo deu errado!')
+      } else toast.error('Algo deu errado!')
+      
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

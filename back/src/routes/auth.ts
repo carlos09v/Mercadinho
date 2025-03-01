@@ -1,12 +1,35 @@
-import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { authenticate } from '../plugins/authenticate'
+import { FastifyTypeInstace } from '../lib/swagger'
 
-export const authRoutes = async(fastify: FastifyInstance) => {
+export const authRoutes = async (app: FastifyTypeInstace) => {
     // Return User
-    fastify.get('/me', {
-        onRequest: [authenticate]
+    app.get('/me', {
+        onRequest: [authenticate],
+        schema: {
+            description: 'Get User',
+            tags: ['users'],
+            response: {
+                200: z.object({
+                    userToken: z.object({
+                        sub: z.string(),
+                        email: z.string().email(),
+                        name: z.string().max(20).nullish(),
+                        avatarUrl: z.string().url().nullish()
+                    }),
+                    userDB: z.object({
+                        id: z.string().uuid(),
+                        name: z.string().max(20).nullish(),
+                        avatarUrl: z.string().url().nullish(),
+                        email: z.string().email(),
+                        password: z.string(),
+                        cash: z.number(),
+                        createdAt: z.date()
+                    }).nullable()
+                })
+            }
+        }
     }, async req => {
         const userToken = req.user
         const userDB = await prisma.user.findUnique({
@@ -18,26 +41,36 @@ export const authRoutes = async(fastify: FastifyInstance) => {
         return { userToken, userDB }
     })
 
-    // Return Token
-    fastify.post('/users', async(req, res) => {
-        const getUserParams = z.object({
-            email: z.string().email(),
-            password: z.string().min(6, 'A senha precisa ter no minimo 6 caracteres').max(20, 'A senha precisa ter até 20 caracteres !').trim()
-        })
-        const { email, password } = getUserParams.parse(req.body)
+    // Login - Return Token
+    app.post('/login', {
+        schema: {
+            description: 'Sign-in and token',
+            tags: ['users'],
+            body: z.object({
+                email: z.string().email(),
+                password: z.string().min(6, 'A senha precisa ter no minimo 6 caracteres').max(20, 'A senha precisa ter até 20 caracteres !').trim()
+            }),
+            response: {
+                200: z.object({
+                    token: z.string()
+                }),
+                403: z.object({
+                    message: z.string()
+                })
+            }
+        }
+    }, async (req, res) => {
+        const { email, password } = req.body
 
-        const check = await prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
             where: {
                 email
-            },
-            select: {
-                password: true
             }
         })
 
         // Validate Email e Password in DB
-        if(!check) return res.status(403).send({ message: 'Email não encontrado !'})
-        if(password !== check?.password) return res.status(403).send({ message: 'Senha Incorreta !' })
+        if (!user) return res.status(403).send({ message: 'Email não encontrado !' })
+        if (password !== user.password) return res.status(403).send({ message: 'Senha Incorreta !' })
 
 
         // --- PENSAVA Q PRECISAVA GUARDAR O TOKEN NO DB ---- 
@@ -59,133 +92,152 @@ export const authRoutes = async(fastify: FastifyInstance) => {
         //     })
         // }
 
-        
-        // Get the User
-        const user = await prisma.user.findUnique({
-            where: {
-                email
-            }
-        })
-        const userDataSchema = z.object({
-            id: z.string(),
-            email: z.string().email().trim(),
-            password: z.string().min(6, 'A senha precisa ter no minimo 6 caracteres').max(20, 'A senha precisa ter até 20 caracteres !').trim(),
-            // avatarUrl: z.string().url(),
-            // name: z.string(),
-            createdAt: z.date()
-        })
-        const userInfo = userDataSchema.parse(user)
 
 
         // Gerar Token
-        const token = fastify.jwt.sign({
-            email: userInfo.email,
+        const token = app.jwt.sign({
+            email: user.email,
             name: user?.name,
             avatarUrl: user?.avatarUrl
         }, {
-            sub: userInfo.id, // Qm gerou o Token
+            sub: user.id, // Qm gerou o Token
             expiresIn: '1 days' // Qndo o Token expirar, o usuario é deslogado !
             // Refresh Token -> pra ser um Token sem expirar
         })
+        // console.log(token)
 
         return { token }
     })
 
     // Confirm Payout
-    fastify.delete('/confirm-payout/:methodPayout', {
-        onRequest:[authenticate]
-    }, async(req, res) => {
-        const confirmPayoutParam = z.object({
-            methodPayout: z.string().transform(v => parseInt(v))
-        })
-        const confirmPayoutQuery = z.object({
-            finance: z.string().transform(v => parseInt(v))
-        })
-        const { methodPayout } = confirmPayoutParam.parse(req.params)
-        const { finance } = confirmPayoutQuery.parse(req.query)
+    app.delete('/confirm-payout/:methodPayout', {
+        onRequest: [authenticate],
+        schema: {
+            description: 'Confirm Payout',
+            tags: ['utils'],
+            params: z.object({
+                methodPayout: z.string().transform(v => parseInt(v))
+            }),
+            querystring: z.object({
+                finance: z.string().transform(v => parseInt(v))
+            })
+        }
+    }, async (req, res) => {
+        const { methodPayout } = req.params
+        const { finance } = req.query
 
         // Validations
-        const prices = await prisma.cart.findMany({
-            where: {
-                userId: req.user.sub
-            },
-            select: {
-                productPrice: true
-            }
-        })
-        const user = await prisma.user.findUnique({
-            where: {
-                email: req.user.email
-            },
-            select: {
-                cash: true
-            }
-        })
-        let totPrice = 0
-        let totValueFinance: number | null = null
-        prices.forEach(p => totPrice += p.productPrice)
-        switch(methodPayout) {
-            case 1:
-                totPrice = totPrice - (totPrice * 10 / 100)
-                break
-            case 2:
-                totPrice = totPrice - (totPrice * 5 / 100)
-                break
-            case 3:
-                totPrice = totPrice / 2
-                break
-            case 4:
-                totPrice = totPrice + (totPrice * 20 / 100)
-                totValueFinance = totPrice / finance
-                break
-            default:
-                return res.status(400).send({ message: 'Error: Alejandro !'})
-        }
-        if(methodPayout !== 4 ? user!.cash < totPrice : totValueFinance! > user!.cash) return res.status(400).send({ messageError: 'Você não tem dinheiro suficiente na carteira :(' })
-
-        //  Remove Cash and Add to BackupCart and Delete Cart
         try {
-            const userCash = await prisma.user.update({
+            // Buscar os preços dos produtos no carrinho
+            const prices = await prisma.cart.findMany({
+                where: { userId: req.user.sub },
+                select: { productPrice: true },
+            });
+
+            // Buscar cash do user
+            const userCash = await prisma.user.findUnique({
                 where: {
                     email: req.user.email
                 },
-                data: {
-                    cash: {
-                        decrement: finance ? totPrice / finance : totPrice
-                    }
-                },
                 select: {
-                    cash: true,
-                    cart: true
+                    cash: true
                 }
             })
-            // userCash.cart.map(cart => {
-            //     if(!cart.backupCartId) {
-                    
-            //     }
-            // })
+            if (!userCash) {
+                return res.status(404).send({ message: "Usuário não encontrado." });
+            }
 
-            // await prisma.backupCart.create({
-            //     data: {
-            //         backupCart: {
-                        
-            //         }
-            //     }
-            // })
-            
+            // Validation
+            // Calcular o preço total base dos produtos
+            const totPriceBase = prices.reduce(
+                (acc, p) => acc + p.productPrice,
+                0
+            );
+
+            let totPrice = totPriceBase;
+            let totValueFinance = 0;
+            // Ajusta o valor total de acordo com o método de pagamento
+            switch (methodPayout) {
+                case 1:
+                    totPrice = totPriceBase - totPriceBase * 0.1;
+                    break;
+                case 2:
+                    totPrice = totPriceBase - totPriceBase * 0.05;
+                    break;
+                case 3:
+                    totPrice = totPriceBase / 2;
+                    break;
+                case 4:
+                    totPrice = totPriceBase + totPriceBase * 0.2;
+                    if (!finance || finance <= 0) {
+                        return res
+                            .status(400)
+                            .send({ message: "Finance must be a valid number for installments." });
+                    }
+                    totValueFinance = totPrice / finance;
+                    break;
+                default:
+                    return res
+                        .status(400)
+                        .send({ message: "Método de pagamento inválido." });
+            }
+
+            // Validar se o usuário possui saldo suficiente
+            if (methodPayout !== 4) {
+                if (userCash.cash < totPrice) {
+                    return res
+                        .status(400)
+                        .send({ messageError: "Você não tem dinheiro suficiente na carteira :(" });
+                }
+            } else {
+                if (totValueFinance > userCash.cash) {
+                    return res
+                        .status(400)
+                        .send({ messageError: "Você não tem dinheiro suficiente para a parcela :(" });
+                }
+            }
+
+            // Calcula o valor a ser decrementado do saldo do usuário
+            const decrementAmount =
+                methodPayout === 4 ? totPrice / finance : totPrice;
+
+            // Atualiza o saldo do usuário (decrementando o valor adequado)
+            const userCashAndCart = await prisma.user.update({
+                where: { email: req.user.email },
+                data: {
+                    cash: { decrement: decrementAmount },
+                },
+                select: { cash: true, cart: true },
+            });
+
+            /* -> Ver lógica pra fazer o backup do Cart
+        userCash.cart.map(cart => {
+            if(!cart.backupCartId) {
+                
+            }
+        })
+        await prisma.backupCart.create({
+            data: {
+                backupCart: {
+                    
+                }
+            }
+        })
+        */
+
             await prisma.cart.deleteMany({
                 where: {
                     userId: req.user.sub
                 }
             })
-            
 
-            res.status(200).send({ 
+            res.status(200).send({
                 message: 'Pagamento efetuado com sucesso !',
-                userCash
+                userCashAndCart
             })
-        }catch (err) {
-            console.log(err)
+        } catch (err) {
+            console.error(err);
+            return res.status(500).send({ message: "Erro ao processar pagamento." });
         }
     })
 }

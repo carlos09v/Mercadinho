@@ -1,38 +1,56 @@
 import Fastify from "fastify";
 import cors from '@fastify/cors'
 import jwt from '@fastify/jwt'
+import { jsonSchemaTransform, serializerCompiler, validatorCompiler, ZodTypeProvider } from "fastify-type-provider-zod";
+import fastifySwagger from "@fastify/swagger";
 
 import { userRoutes } from './routes/user'
 import { authRoutes } from './routes/auth'
 import { cartRoutes } from './routes/cart'
+import fastifySwaggerUi from "@fastify/swagger-ui";
 
-// Criar o server
-async function bootstrap() {
-    const fastify = Fastify({
-        logger: true // Log dos erros, alertas
-    })
+const app = Fastify({
+    logger: true // Habilita o log de erros e alertas
+}).withTypeProvider<ZodTypeProvider>()  // -> Pro Swagger
 
-    await fastify.register(cors, {
-        origin: 'https://mercadinho4-0.vercel.app',
-        credentials: true,
-        methods: ['POST', 'PUT', 'GET', 'DELETE'] // Qlquer aplicação pode acessar o back-end
-        // em ambiente dev = true. Em prod é so adicionar os domínios Ex: google.com
-    })
+app.register(cors, {
+    origin: process.env.CORS_ORIGIN || '*', // Utiliza a variável de ambiente ou um fallback (ex: '*')
+    credentials: true,
+    methods: ['POST', 'PUT', 'GET', 'DELETE']  // Métodos permitidos
+})
 
-    // Em produção isso precisa ser uma variável ambiente
-    await fastify.register(jwt, {
-        secret: process.env.JWT_SECRET_KEY! // actually, exclamation (!) says, hey typescript, don't worry, don't check this.
-    })
+app.register(jwt, {
+    secret: process.env.JWT_SECRET_KEY
+});
 
-    // http://localhost:3333
+// Using Swagger
+app.register(fastifySwagger, {
+    openapi: {
+        info: {
+            title: 'Mercadinho API',
+            version: '1.0.0'
+        }
+    },
+    transform: jsonSchemaTransform
+})
+app.register(fastifySwaggerUi, {
+    routePrefix: '/docs'
+})
 
-    // Utilizar Interfaces de API pra testar. (Ex: Postman, insomnia, hoppscotch)
-    // Importar Rotas
-    await fastify.register(authRoutes)
-    await fastify.register(userRoutes)
-    await fastify.register(cartRoutes)
-    
-    await fastify.listen({ port: process.env.PORT || 3333, host: '0.0.0.0' })
-}
+// fastify-type-provider-zod
+app.setValidatorCompiler(validatorCompiler);
+app.setSerializerCompiler(serializerCompiler);
 
-bootstrap()
+// Utilizar Interfaces de API pra testar. (Ex: Postman, insomnia, hoppscotch)
+// Importar Rotas
+app.register(authRoutes)
+app.register(userRoutes)
+app.register(cartRoutes)
+
+const port = process.env.SERVER_PORT || 3333;
+const host = '0.0.0.0';
+// http://localhost:3333
+// http://localhost:3333/docs
+app.listen({ port, host }).then(() => {
+    console.log(`🚀 Server is running on http://${host}:${port}`);
+})

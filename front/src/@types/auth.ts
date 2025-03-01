@@ -1,12 +1,13 @@
 import { Id } from "react-toastify"
 import { CartProps, SignInData, UserProps } from "./user"
+import { NavigateFunction } from "react-router-dom"
 
 // --- AuthProps
 interface AuthContextDataProps {
     // signed?: boolean
     getUser: () => Promise<void>
     getCart: () => Promise<void>
-    signIn: (data: SignInData) => Promise<JSX.Element | void | Id | boolean>
+    signIn: ({ email, password }: SignInData, navigate: NavigateFunction) => Promise<false | undefined>
     signOut: () => void
     user: UserProps | null
     cart: CartProps[] | null

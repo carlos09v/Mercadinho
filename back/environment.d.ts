@@ -2,7 +2,8 @@ declare global {
     namespace NodeJS {
         interface ProcessEnv {
             JWT_SECRET_KEY: string
-            PORT: number
+            CORS_ORIGIN: string
+            SERVER_PORT: number
         }
     }
 }

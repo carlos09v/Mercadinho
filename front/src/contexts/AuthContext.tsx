@@ -5,6 +5,7 @@ import { api } from "../lib/axios";
 import { destroyCookie, parseCookies, setCookie } from "nookies";
 import { toast } from "react-toastify";
 import { CountContext } from "./CountContext";
+import { NavigateFunction } from "react-router-dom";
 
 
 // Context + Provider
@@ -16,6 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { resetCounts, getProductsUserCount } = useContext(CountContext)
     const [cart, setCart] = useState<CartProps[] | null>(null)
     const [user, setUser] = useState<UserProps | null>(null)
+   
     // TotProductsPrice
     let totProd = 0
     if (cart) {
@@ -24,30 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
     }
 
-    const getUser = async () => {
-        const { 'auth.token': token } = parseCookies()
-        if (token) {
-            try {
-                const { data } = await api.get('/me')
-                setUser(data.userDB)
-            } catch (err) {
-                console.log(err)
-            }
-        } else {
-            console.log('Não existe token :(')
-        }
-    }
-
     const getCart = async () => {
-        const { data } = await api.get('/cartUser')
+        const { data } = await api.get('/cart/user')
         setCart(data.cart.cart)
     }
 
-
-    const signIn = async ({ email, password }: SignInData) => {
+    const signIn = async ({ email, password }: SignInData, navigate: NavigateFunction) => {
         // Validar o Email e Senha e Receber o Token JWT e o Cart[] do Back-end
         try {
-            const { data } = await api.post(`/users`, {
+            const { data } = await api.post(`/login`, {
                 email,
                 password
             })
@@ -62,12 +49,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             })
 
             await getUser() // Receber o UserData
-            getProductsUserCount() // Get ProductsCount
+            await getProductsUserCount() // Get ProductsCount
+            navigate('/dashboard')
         } catch (err: any) {
             if (err.response) toast.error(err.response.data.message)
             return false
         }
+    }
 
+    const getUser = async () => {
+        const { 'auth.token': token } = parseCookies() // Pega o Token
+        if (token) {
+            try {
+                const { data } = await api.get('/me')
+                setUser(data.userDB)
+            } catch (err) {
+                console.log(err)
+            }
+        } else {
+            console.log('Não existe token :(')
+        }
     }
 
     const signOut = () => {

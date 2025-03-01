@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useState } from "react";
+import { createContext, ReactNode, useEffect, useState } from "react";
 import { CountContextProps } from "../@types/web";
 import { api } from "../lib/axios";
 
@@ -27,13 +27,13 @@ export function CountProvider({ children }: { children: ReactNode }) {
         setCountUser(data.count)
     }
     const getCartsCount = async () => {
-        const { data } = await api.get('/products/count')
+        const { data } = await api.get('/cart/products/count')
         setCountCart(data.count)
     }
 
     // Get ProductsCount by User
     const getProductsUserCount = async () => {
-        const { data } = await api.get('/cartUser/count')
+        const { data } = await api.get('/cart/user/count')
         setProductsCount(data.countCartUser)
     }
 

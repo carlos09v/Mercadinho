@@ -6,23 +6,24 @@ generator client {
 }
 
 // gerar SVG
-// generator erd {
-//   provider = "prisma-erd-generator"
-//   theme    = "dark"
-// }
+generator erd {
+  provider = "prisma-erd-generator"
+  theme    = "dark"
+}
 
 datasource db {
   // provider     = "sqlite"
-  provider     = "mysql"
+  provider     = "postgresql"
   url          = env("DATABASE_URL")
   // shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
-  relationMode = "prisma" // Connect with PlanetScale
+  // relationMode = "prisma" // Connect with PlanetScale
 }
+
 
 // Criar Tabelas/Models
 // Usuário
 model User {
-  id String @id @default(cuid()) // Dizer q é Primary Key - Obs: O Auto Increment ñ é mt seguro
+  id String @id @default(uuid()) // Dizer q é Primary Key - Obs: O Auto Increment ñ é mt seguro
 
   name      String? // Nullable
   avatarUrl String?
@@ -36,7 +37,7 @@ model User {
 
 // Carrinho de Compra
 model Cart {
-  id           String  @id @default(cuid())
+  id String @id @default(uuid())
   userId       String
   backupCartId String?
 
@@ -46,17 +47,13 @@ model Cart {
   addedAt      DateTime   @default(now())
 
   // Relacionamentos
-  user       User        @relation(fields: [userId], references: [id])
-  backupCart BackupCart? @relation(fields: [backupCartId], references: [id])
-
-  // In MySQL
-  @@index([userId])
-  @@index([backupCartId])
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  backupCart BackupCart? @relation(fields: [backupCartId], references: [id], onDelete: Cascade)
 }
 
 // Backup do Carrinho de Compra => nunca vai ser apagado
 model BackupCart {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   backupCart Cart[]
 }

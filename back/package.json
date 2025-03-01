@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "engines": {
-    "node": "18"
+    "node": "22"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -19,18 +19,23 @@
   "author": "Carlos Vinicius",
   "license": "ISC",
   "dependencies": {
-    "@fastify/cors": "^8.2.0",
-    "@fastify/jwt": "^6.5.0",
-    "@prisma/client": "^4.7.1",
-    "fastify": "^4.10.2",
-    "zod": "^3.19.1"
+    "@fastify/cors": "^11.0.0",
+    "@fastify/jwt": "^9.0.4",
+    "@fastify/swagger": "^9.4.2",
+    "@fastify/swagger-ui": "^5.2.2",
+    "@prisma/client": "^6.4.1",
+    "fastify": "^5.2.1",
+    "fastify-type-provider-zod": "^4.0.2",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^18.11.18",
-    "prisma": "^4.7.1",
-    "tsup": "^6.6.3",
-    "tsx": "^3.12.1",
-    "typescript": "^4.9.3"
+    "@mermaid-js/mermaid-cli": "^11.4.2",
+    "@types/node": "^22.13.5",
+    "prisma": "^6.4.1",
+    "prisma-erd-generator": "^2.0.4",
+    "tsup": "^8.4.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
   },
   "_commands": {
     "0": "npm i fastify @fastify/cors @prisma/client",
@@ -43,28 +48,41 @@
     "7": "npx prisma generate",
     "8": "npx prisma db seed",
     "9": "npm i zod @fastify/jwt",
-    "10": "scoop bucket add pscale https://github.com/planetscale/scoop-bucket.git",
-    "11": "scoop install pscale mysql",
-    "12": "pscale auth login",
-    "13": "pscale db create mercadinho4_0-DB",
-    "14": "pscale branch promote mercadinho4_0-db main",
-    "15": "pscale branch create mercadinho4_0-db initial-setup",
-    "16": "pscale connect mercadinho4_0-db initial-setup --port 3309",
-    "17": "npx prisma db push",
-    "18": "npm i tsup -D"
+    "18": "npm i tsup -D",
+    "PlanetScale": {
+      "10": "scoop bucket add pscale https://github.com/planetscale/scoop-bucket.git",
+      "11": "scoop install pscale mysql",
+      "12": "pscale auth login",
+      "13": "pscale db create mercadinho4_0-DB",
+      "14": "pscale branch promote mercadinho4_0-db main",
+      "15": "pscale branch create mercadinho4_0-db initial-setup",
+      "16": "pscale connect mercadinho4_0-db initial-setup --port 3309",
+      "17": "npx prisma db push"
+    },
+    "2025_Commands": {
+      "19": "npm outdated",
+      "20": "npm update",
+      "21": "npx npm-check-updates -u",
+      "22": "npm i fastify-type-provider-zod",
+      "23": "npm i @fastify/swagger @fastify/swagger-ui"
+    }
   },
   "_comments": {
-    "3": "tsx compila o codigo e executa automaticamente",
+    "3": "tsx: compila o codigo e executa automaticamente; @types/node: usar o .env",
     "4": "Detectar migrations (versionamento de Banco de Dados (tipo Git))",
     "5": "Vizualizar o DB no browser",
     "7": "Vai gerar o diagrama em svg",
     "8": "Rodar (criar) o seed",
     "9": "Libs de Schema Validation e Token Generate",
-    "10, 11, 12, 13": "Usando PlanetScale => instalei o scoop - loguei no pscale - criei um DB e subi",
-    "14": "Dizer q a branch principal (main) é a prod",
-    "15": "Criar uma branch de desenvolvimento",
-    "16": "Deixar o DB no ar",
-    "17": "Subir o Schema pro DB pscale => pra fzer isso tive q mudar o DB de sqlite pra mysql",
-    "18": "Fazer o Build => https://www.youtube.com/watch?v=pmXfvd6Zqg4&t=281s (video q me salvou)"
+    "18": "Fazer o Build => (https://www.youtube.com/watch?v=pmXfvd6Zqg4&t=281s) (video q me salvou)",
+    "22": "New: fastify with zod",
+    "23": "New: fastify with swagger => (https://www.youtube.com/watch?v=mULWHLquYP0&t=400s)",
+    "PlanetScale": {
+      "14": "Dizer q a branch principal (main) é a prod",
+      "15": "Criar uma branch de desenvolvimento",
+      "16": "Deixar o DB no ar",
+      "17": "Subir o Schema pro DB pscale => pra fzer isso tive q mudar o DB de sqlite pra mysql",
+      "10, 11, 12, 13": "Usando PlanetScale => instalei o scoop - loguei no pscale - criei um DB e subi"
+    }
   }
 }

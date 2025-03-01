@@ -1,12 +1,12 @@
 import { FormEvent, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
-import { api } from "../lib/axios"
+import { api } from "../../lib/axios"
 import { parseCookies } from "nookies"
 
-import Input from "../components/Input"
-import Logo from "../components/Logo"
-import CreateSvg from '../assets/unDrawPics/create_re_57a3.svg'
+import Input from "../../components/Input"
+import Logo from "../../components/Logo"
+import CreateSvg from '../../assets/unDrawPics/create_re_57a3.svg'
 
 const CreateAccount = () => {
   const [userDataRegister, setUserDataRegister] = useState({ email: '', password: '', confirmPassword: '' })
@@ -50,6 +50,7 @@ const CreateAccount = () => {
       }
     } catch (err: any) {
       if(err.response) toast.error(err.response.data.message)
+    } finally {
       setLoading(false)
     }
   }

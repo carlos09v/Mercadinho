@@ -8,5 +8,4 @@ const themeCheck = () => {
     }
 }
 
-
 export { themeCheck }

@@ -7,15 +7,17 @@ import { MdShoppingCart } from 'react-icons/md'
 import Input from "../Input"
 import { CountContext } from "../../contexts/CountContext"
 import { AuthContext } from "../../contexts/AuthContext"
-import { SibeBarRefs } from "../../@types/web"
 
+interface ShopProps {
+  setToggleStage: (stage: string) => void
+}
 
-const Shop = ({ asideIconPrintRef, headerIconPrintRef, setToggleStage }: SibeBarRefs) => {
+const Shop = ({ setToggleStage }: ShopProps) => {
   const [data, setData] = useState([])
   const [filter, setFilter] = useState('')
   const [search, setSearch] = useState('')
   const [cartDataRegister, setCartDataRegister] = useState({ productName: '', productPrice: '', inputCategory: '' })
-  const { productsCount, getProductsUserCount } = useContext(CountContext)
+  const { productsCount, getProductsUserCount, setProductsCount } = useContext(CountContext)
   const { user, getUser, setCart } = useContext(AuthContext)
   const [loading, setLoading] = useState(false) // Loading to disable the button and prevent make another request
 
@@ -25,12 +27,6 @@ const Shop = ({ asideIconPrintRef, headerIconPrintRef, setToggleStage }: SibeBar
   // https://www.youtube.com/watch?v=kCpca2z2cls&t=636s
   // const filteredData = filter.length > 0 ? data.filter(repo => data.name.includes(filter)) : []
 
-  // Get User and ProductsCount
-  if (!user) {
-    getUser()
-    getProductsUserCount()
-  }
-
 
   // useLayoutEffect => You only want to use this hook when you need to do any DOM changes directly.
   // This hook is optimized, to allow the engineer to make changes to a DOM node directly before the browser has a chance to paint.
@@ -39,12 +35,6 @@ const Shop = ({ asideIconPrintRef, headerIconPrintRef, setToggleStage }: SibeBar
     // console.log(carrossel.current?.scrollWidth, carrossel.current?.offsetWidth)
     if (carousel?.current) {
       setWidth(carousel.current.scrollWidth - carousel.current.offsetWidth)
-    }
-
-    // Hide IconPrint from Sidebar
-    if (headerIconPrintRef?.current?.style.display === 'block' || asideIconPrintRef?.current?.style.display === 'block') {
-      if (headerIconPrintRef.current) headerIconPrintRef.current.style.display = 'none'
-      if (asideIconPrintRef.current) asideIconPrintRef.current.style.display = 'none'
     }
   }, [])
 
@@ -66,15 +56,17 @@ const Shop = ({ asideIconPrintRef, headerIconPrintRef, setToggleStage }: SibeBar
 
     try {
       setLoading(true)
-      const { data } = await api.post('/create-product', {
+      const { data } = await api.post('/cart/create-product', {
         productName: cartDataRegister.productName,
         productPrice: parseFloat(cartDataRegister.productPrice),
         category: cartDataRegister.inputCategory
       })
 
       toast.success(data.message)
-      getProductsUserCount()
-      setCart(null) // Resetar o setCart pra ele fazer outra request qndo entrar no cart
+      setProductsCount(prev => prev ? prev + 1 : null)
+      if(!productsCount) getProductsUserCount()
+        
+      setCart(prevCart => prevCart ? [...prevCart, data.cart] : data.cart) // Adiciona os novos dados ao estado do cart
       setCartDataRegister({ productPrice: '', productName: '', inputCategory: '' })
       setLoading(false)
     } catch (err) {

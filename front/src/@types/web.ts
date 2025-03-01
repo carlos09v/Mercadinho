@@ -1,26 +1,41 @@
-import { ReactElement, InputHTMLAttributes } from "react"
+import { ComponentProps, ReactElement } from "react"
+
+interface InputIconProps extends ComponentProps<'span'> { }
 
 // ---- WebProps
+
+// -- SideBar
+type SidebarType = 'header' | 'aside';
+
 type SideBarIconProps = {
-    icon?: ReactElement
-    text?: string
-    to?: string
-    style?: string
-    styleTooltip?: string
-    deleteCookie?: boolean
-    isActive?: boolean
-    type: 'header' | 'aside'
-    innerRef?: React.RefObject<HTMLDivElement>
-    refIconPrint?: React.RefObject<HTMLButtonElement>
-    setToggleStage?: (value: React.SetStateAction<string>) => void
-    toggleStage?: string
-}
+    icon: ReactElement<ComponentProps<'span'>>;
+    text?: string;
+    to?: string;
+    styleTooltip?: string;
+    isActive?: boolean;
+    deleteCookie?: boolean;
+    type: SidebarType;  // Usando o tipo reutilizável
+    customClass?: string;
+};
+
+type SideBarProps = {
+    type: SidebarType;  // Usando o tipo reutilizável
+    visible: boolean;
+    toggleStage: string;
+    setToggleStage: (stage: string) => void;
+};
+
+type SettingsPageProps = {
+    sidebarType: SidebarType;  // Usando o tipo reutilizável
+    setSidebarType: (value: SidebarType) => void;
+};
 
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+// -- Input
+interface InputProps extends ComponentProps<'input'> {
     labelname?: string
-    productNameIcon?: ReactElement
-    productPriceIcon?: ReactElement
+    productNameIcon?: InputIconProps
+    productPriceIcon?: InputIconProps
 }
 
 interface CountContextProps {
@@ -36,14 +51,6 @@ interface CountContextProps {
     setCashCount: (value: React.SetStateAction<number>) => void
 }
 
-type SibeBarRefs = {
-    asideRef?: React.RefObject<HTMLDivElement>
-    headerRef?: React.RefObject<HTMLDivElement>
-    asideIconPrintRef: React.RefObject<HTMLButtonElement>
-    headerIconPrintRef: React.RefObject<HTMLButtonElement>
-    setToggleStage?: (value: React.SetStateAction<string>) => void
-}
-
 /* Cart */
 type TablePaginationProps = {
     totalProducts: number
@@ -55,9 +62,8 @@ type TablePaginationProps = {
 /* Payout */
 type PayoutProps = {
     setCurrentStep: (value: React.SetStateAction<string>) => void
-    setInputPayout?:  (value: React.SetStateAction<string>) => void
+    setInputPayout?: (value: React.SetStateAction<string>) => void
     inputPayout: string
-    buttonBackRef?: React.RefObject<HTMLButtonElement>
 }
 
-export type { SideBarIconProps, SibeBarRefs, InputProps, CountContextProps, TablePaginationProps, PayoutProps }
+export type { SidebarType, SideBarIconProps, SideBarProps, SettingsPageProps, InputProps, CountContextProps, TablePaginationProps, PayoutProps }

@@ -3,7 +3,6 @@ import { parseCookies } from 'nookies'
 import { toast } from "react-toastify";
 import { SignInData } from "../@types/user";
 
-
 const { 'auth.token': token } = parseCookies()
 
 export const api = axios.create({

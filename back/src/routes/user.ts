@@ -1,25 +1,76 @@
-import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { z } from 'zod'
 import { authenticate } from '../plugins/authenticate'
+import { FastifyTypeInstace } from '../lib/swagger'
 
-export const userRoutes = async (fastify: FastifyInstance) => {
-    // Contagem de Usuários criados
-    fastify.get('/users/count', async () => {
+export const userRoutes = async (app: FastifyTypeInstace) => {
+    // Get users count
+    app.get('/users/count', {
+        schema: {
+            tags: ['users'],
+            description: 'Get users count'
+        }
+    }, async () => {
         const count = await prisma.user.count()
 
         return { count }
     })
 
-    // Create User
-    fastify.post('/create-account', async (req, res) => {
-        // Validar os dados pra ser tratado antes de enviar pro DB (utilizando o zod)
-        const createUserBody = z.object({
-            email: z.string().email().trim(),
-            password: z.string().min(6, 'A senha precisa ter no minimo 6 caracteres').max(20, 'A senha precisa ter até 20 caracteres !').trim()
+    // Get users list
+    app.get('/users', {
+        schema: {
+            tags: ['users'],
+            description: 'Get users list',
+            response: {
+                200: z.array(z.object({
+                    id: z.string().uuid(),
+                    name: z.string().max(20).nullish(),
+                    avatarUrl: z.string().url().nullish(),
+                    email:  z.string().email(),
+                    cash: z.number(),
+                    createdAt: z.date()
+                }))
+            }
+        }
+    }, async () => {
+        const users = await prisma.user.findMany({
+            select: {
+                id: true,
+                name: true,
+                avatarUrl: true,
+                cash: true,
+                createdAt: true,
+                email: true
+                // Except password 
+            }
         })
-        const { email, password } = createUserBody.parse(req.body)
 
+        return users
+    })
+
+    // Create User
+    app.post('/create-account', {
+        schema: {
+            description: 'Sign-up',
+            tags: ['users'],
+            body: z.object({
+                email: z.string().email().trim(),
+                password: z.string().min(6, 'A senha precisa ter no minimo 6 caracteres').max(20, 'A senha precisa ter até 20 caracteres !').trim()
+            }),
+            response: {
+                201: z.object({
+                    message: z.string(),
+                    idUser: z.object({
+                        id: z.string().uuid()
+                    })
+                }),
+                404: z.object({
+                    message: z.string()
+                })
+            }
+        }
+    }, async (req, res) => {
+        const { email, password } = req.body
 
         // Register and get Id
         try {
@@ -37,70 +88,120 @@ export const userRoutes = async (fastify: FastifyInstance) => {
                 message: 'Usuário cadastrado com sucesso !',
                 idUser
             })
-        } catch (e) {
+        } catch (err) {
+            console.log(err)
             res.status(404).send({ message: 'Email ja utilizado/criado !' })
         }
 
     })
 
     // Update User
-    fastify.put('/update-user', {
-        onRequest: [authenticate]
+    app.put('/users/update-user', {
+        onRequest: [authenticate],
+        schema: {
+            description: 'Update User',
+            tags: ['users'],
+            body: z.object({
+                name: z.string().max(20).trim().nullish(),
+                avatarUrl: z.string().trim().nullish().transform(value => value === "" ? null : value)
+            }),
+            response: {
+                200: z.object({
+                    updatedUser: z.object({
+                        name: z.string().max(20).nullish(),
+                        avatarUrl: z.string().url().nullish()
+                    }),
+                    message: z.string()
+                })
+            }
+        }
     }, async (req, res) => {
-        // Validar os dados pra ser tratado antes de enviar pro DB (utilizando o zod)
-        const createUserUpdateBody = z.object({
-            name: z.string().max(20).trim(),
-            avatarUrl: z.string().url().trim()
-        })
-        const { name, avatarUrl } = createUserUpdateBody.parse(req.body)
+        const { name, avatarUrl } = req.body
 
         // Update and Return User
-        const user = await prisma.user.update({
+        const updatedUser = await prisma.user.update({
             where: {
                 email: req.user.email
             },
             data: {
                 name,
                 avatarUrl
+            },
+            select: {
+                name: true,
+                avatarUrl: true
             }
         })
 
-        res.status(200).send({ user, message: 'Dados salvos com sucesso!' })
+        res.status(200).send({ updatedUser, message: 'Dados salvos com sucesso!' })
     })
 
     // Save Money
-    fastify.put('/save-money', {
-        onRequest: [authenticate]
-    }, async (req, res) => {
-        const moneyBody = z.object({
-            cash: z.number()
-        })
-        const { cash } = moneyBody.parse(req.body)
-
-        const user = await prisma.user.update({
-            where: {
-                email: req.user.email
-            },
-            data: {
-                cash: {
-                    increment: cash
-                }
-            },
-            select: {
-                cash: true
+    app.put('/users/save-money', {
+        onRequest: [authenticate],
+        schema: {
+            description: 'Update/save money',
+            tags: ['users'],
+            body: z.object({
+                cash: z.number()
+            }),
+            response: {
+                200: z.object({
+                    user: z.object({
+                        cash: z.number()
+                    }),
+                    message: z.string()
+                }),
+                400: z.object({
+                    errorMessage: z.string()
+                })
             }
-        })
+        }
+    }, async (req, res) => {
+        const { cash } = req.body
 
-        res.status(200).send({ user, message: 'Dinheiro salvo na carteira!' })
+        try {
+            const user = await prisma.user.update({
+                where: {
+                    email: req.user.email
+                },
+                data: {
+                    cash: {
+                        increment: cash
+                    }
+                },
+                select: {
+                    cash: true
+                }
+            })
+    
+            res.status(200).send({ user, message: 'Dinheiro salvo na carteira!' })
+        } catch (err) {
+            console.log(err)
+            res.status(400).send({ errorMessage: 'Algo deu errado ao tentar excluir !' })
+        }
     })
 
     // Forgot Password
-    fastify.post('/forgot-password', async (req, res) => {
-        const createReqBody = z.object({
-            email: z.string().email().trim()
-        })
-        const { email } = createReqBody.parse(req.body)
-
+    app.post('/forgot-password', {
+        schema: {
+            description: 'Forget password',
+            tags: ['utils'],
+            body: z.object({
+                email: z.string().email().trim()
+            }),
+            response: {
+                200: z.object({
+                    password: z.string()
+                }),
+                404: z.object({
+                    message: z.string()
+                })
+            }
+        }
+    }, async (req, res) => {
+        const { email } = req.body
+        
         // Get Password
         const passwordUser = await prisma.user.findUnique({
             where: {
@@ -110,41 +211,39 @@ export const userRoutes = async (fastify: FastifyInstance) => {
                 password: true
             }
         })
+
         if (!passwordUser) return res.status(404).send({ message: 'Email não encontrado !' })
 
-        return { passwordUser }
+        return passwordUser
     })
 
     // Delete Account
-    fastify.delete('/delete-user/:email', {
-        onRequest: [authenticate]
-    }, async(req, res) => {
-        const emailParams = z.object({
-            email: z.string().email()
-        })
-        const { email } = emailParams.parse(req.params)
+    app.delete('/users/delete-user/:email', {
+        onRequest: [authenticate],
+        schema: {
+            description: 'Delete User',
+            tags: ['users'],
+            params: z.object({
+                email: z.string().email()
+            })
+        }
+    }, async (req, res) => {
+        const { email } = req.params
 
-        if(email !== req.user.email) return res.status(404).send({ message: 'Email Incorreto ou não existe !'})
+        if (email !== req.user.email) return res.status(404).send({ message: 'Email Incorreto ou não existe !' })
 
         try {
-            const deleteCart = prisma.cart.deleteMany({
-                where: {
-                    userId: req.user.sub
-                }
-            })
-
-            const deleteUser = prisma.user.delete({
+            await prisma.user.delete({
                 where: {
                     email
                 }
             })
 
-            // Deletar ao mesmo tempo o (cart e user) se ñ da erro
-            await prisma.$transaction([deleteCart, deleteUser])
-
-            res.status(200).send({ message: 'Conta deletada com sucesso !'})
-        }catch (err) {
+            // Note: There's no need to delete the other tables due to onDelete: Cascade
+            res.status(200).send({ message: 'Conta deletada com sucesso !' })
+        } catch (err) {
             console.log(err)
+            res.status(400).send({ errorMessage: 'Algo deu errado ao tentar excluir !' })
         }
     })
 }

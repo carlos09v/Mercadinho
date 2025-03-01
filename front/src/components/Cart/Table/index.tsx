@@ -1,14 +1,14 @@
-import { AuthContext } from "../../contexts/AuthContext"
-import { FormEvent, useContext, useRef, useState } from 'react'
-import { CountContext } from "../../contexts/CountContext"
-import { api } from "../../lib/axios"
+import { AuthContext } from "../../../contexts/AuthContext"
+import { FormEvent, useContext, useState } from 'react'
+import { CountContext } from "../../../contexts/CountContext"
+import { api } from "../../../lib/axios"
 import { toast } from "react-toastify"
 import { AiFillDelete } from "react-icons/ai"
 import Pagination from "./TablePagination"
 
 const Table = ({ hideDelete = false }: { hideDelete?: boolean }) => {
     const { setProductsCount } = useContext(CountContext)
-    const { cart, getCart } = useContext(AuthContext)
+    const { cart, setCart } = useContext(AuthContext)
     // Pagination
     const [currentPage, setCurrentPage] = useState(1)
     const productsPerPage = 8
@@ -23,14 +23,17 @@ const Table = ({ hideDelete = false }: { hideDelete?: boolean }) => {
 
         try {
             setLoading(true)
-            const { data } = await api.delete(`/delete-product/${id}`)
+            const { data } = await api.delete(`/cart/delete-product/${id}`)
 
             toast.success(data.message)
-            await getCart()
-            setProductsCount(null)
-            setLoading(false)
+            
+            setCart((prevCart) => prevCart ?  prevCart.filter((product) => product.id !== id) : null)
+    
+            setProductsCount((prev) => prev ? prev - 1 : null)
         } catch (err: any) {
             if (err.response) return toast.error(err.response.data.errorMessage)
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -68,9 +71,9 @@ const Table = ({ hideDelete = false }: { hideDelete?: boolean }) => {
                             ))}
                         </tbody>
                     </table>
+
                     {/* Table Paginaton  */}
                     <Pagination totalProducts={cart.length} productsPerPage={productsPerPage} setCurrentPage={setCurrentPage} currentPage={currentPage} />
-                   
                 </div>
             )}
         </div>

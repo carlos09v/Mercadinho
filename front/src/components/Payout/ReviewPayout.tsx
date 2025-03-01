@@ -10,12 +10,10 @@ import { useNavigate } from "react-router-dom"
 import clsx from "clsx"
 import { CountContext } from "../../contexts/CountContext"
 
-const ReviewPayout = ({ setCurrentStep, buttonBackRef, inputPayout }: PayoutProps) => {
+const ReviewPayout = ({ setCurrentStep, inputPayout }: PayoutProps) => {
   const navigate = useNavigate()
   const { user, totProd, setCart, setUser } = useContext(AuthContext)
   const { setProductsCount } = useContext(CountContext)
-  // Hide BackButton 
-  if (buttonBackRef?.current) buttonBackRef.current.style.display = 'none'
   // How many finances
   const [finance, setFinances] = useState('')
   const [loading, setLoading] = useState(false) // Loading to disable the button and prevent make another request
@@ -24,8 +22,8 @@ const ReviewPayout = ({ setCurrentStep, buttonBackRef, inputPayout }: PayoutProp
   let displayPayoutMethod = ''
   let discountLabel = ''
   let jurosLabel = ''
-  let totLiquid: number | null = null
-  let totValueFinance: number | null = null
+  let totLiquid: number = 0
+  let totValueFinance: number = 0
   switch (inputPayout) {
     case '1':
       displayPayoutMethod = 'Á vista dinheiro/cheque 💵'
@@ -51,31 +49,34 @@ const ReviewPayout = ({ setCurrentStep, buttonBackRef, inputPayout }: PayoutProp
       displayPayoutMethod = 'Error: Alejandro !'
     // console.log(inputPayout)
   }
+  const payoutValue = inputPayout === '4' ? totValueFinance : totLiquid
 
   // Process Payout
   const confirmPayout = async (e: FormEvent) => {
     e.preventDefault()
 
     // Validações
-    if(inputPayout === '4' && parseInt(finance) <= 12) {
+    if (inputPayout === '4' && parseInt(finance) <= 12) {
       if (totValueFinance! > user!.cash) return toast.error('Você não tem dinheiro suficiente, tente parcelar pra mais X ou faça mais dinheiro !')
-    }else {
+    } else {
       if (totLiquid! > user!.cash) return toast.error('Você não tem dinheiro suficiente, tente dividir no Cartão !')
     }
-    
+
 
     try {
       setLoading(true)
       const { data } = await api.delete(`/confirm-payout/${inputPayout}?finance=${inputPayout === '4' ? finance : null}`)
 
       toast.success(data.message)
-      setUser({ ...user!, cash: data.userCash.cash })
+      if(user) {
+        setUser({ ...user, cash: data.userCashAndCart.cash })
+      }
       setCart(null)
       setProductsCount(null)
       navigate('/dashboard')
     } catch (err: any) {
       console.log(err)
-      if(err.response) toast.error(err.response.data.messageError)
+      if (err.response) toast.error(err.response.data.messageError)
       setLoading(false)
     }
   }
@@ -137,25 +138,29 @@ const ReviewPayout = ({ setCurrentStep, buttonBackRef, inputPayout }: PayoutProp
           {user && (
             <div className="max-w-[35%] max-h-[150px] flex flex-col">
               <div className="p-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-black rounded-t-md flex flex-col items-start justify-around gap-1 font-thin border-2 border-purple-500 dark:border-blue-500 ">
-                <div className="w-20 h-20 rounded-full bg-gray-300 border-2 dark:border-blue-500 border-purple-500 p-1 self-center">
-                  <img src={user.avatarUrl} alt="AvatarUrl" className="w-full rounded-full hover:scale-105 duration-300" />
-                </div>
+                {user.avatarUrl && (
+                  <div className="w-20 h-20 rounded-full bg-gray-300 border-2 dark:border-blue-500 border-purple-500 p-1 self-center">
+                    <img src={user.avatarUrl} alt="AvatarUrl" className="w-full rounded-full hover:scale-105 duration-300" />
+                  </div>
+                )}
 
-                <p>Email: <span className="dark:text-blue-500 font-semibold text-purple-400">{user.email}</span></p>
-                {user?.name && (
-                  <p>Nome: <span className="dark:text-blue-500 font-semibold text-purple-400">{user.name}</span></p>
+                <p className="font-semibold">
+                  Email: <span className="dark:text-blue-500  text-purple-400 font-normal">{user.email}</span>
+                </p>
+                {user.name && (
+                  <p className="font-semibold">
+                    Nome: <span className="dark:text-blue-500  text-purple-400 font-normal">{user.name}</span>
+                  </p>
                 )}
-                {inputPayout === '4' ? (
-                  <p>Carteira: <span className={clsx("font-semibold", {
-                    ["dark:text-green-600 text-green-400"]: totValueFinance ? totValueFinance <= user.cash : null,
-                    ["dark:text-red-500 text-red-500"]: totValueFinance ? totValueFinance > user.cash : null
-                  })}>R$ {user.cash.toFixed(2)}</span></p>
-                ) : (
-                  <p>Carteira: <span className={clsx("font-semibold", {
-                    ["dark:text-green-600 text-green-400"]: totLiquid! <= user.cash,
-                    ["dark:text-red-500 text-red-500"]: totLiquid! > user.cash
-                  })}>R$ {user.cash.toFixed(2)}</span></p>
-                )}
+                <p>
+                  Carteira:
+                  <span className={clsx("font-bold", {
+                    "dark:text-green-600 text-green-400": payoutValue <= user.cash,
+                    "dark:text-red-500 text-red-500": payoutValue > user.cash,
+                  })}>
+                    R$ {user.cash.toFixed(2)}
+                  </span>
+                </p>
               </div>
 
               <div className="flex flex-col items-center gap-3 bg-slate-300 dark:bg-blue-600 rounded-b-3xl border-2 border-purple-500 dark:border-blue-600 p-2">

@@ -1,5 +1,4 @@
-import { useContext, useLayoutEffect, useState } from "react"
-import { SibeBarRefs } from "../../@types/web"
+import { useContext, useEffect, useState } from "react"
 import { AuthContext } from "../../contexts/AuthContext"
 import Modal from 'react-modal'
 import { AiFillCloseSquare } from "react-icons/ai"
@@ -14,31 +13,23 @@ import clsx from "clsx"
 import { toast } from "react-toastify"
 import Loading from "../Loading"
 
-const Cart = ({ asideIconPrintRef, headerIconPrintRef }: SibeBarRefs) => {
+
+const Cart = () => {
   const navigate = useNavigate()
-  const { cart, getCart, user, totProd } = useContext(AuthContext)
+  const { user, totProd, getCart, cart } = useContext(AuthContext)
   const [showModal, setShowModal] = useState(false)
 
-  // get Cart
-  if (!cart) getCart()
-
+  useEffect(() => {
+    // get Cart
+    if (!cart) getCart()
+  }, [])
+  
   const handlePayout = () => {
     if(totProd > user!.cash) toast.warn('Você não tem dinheiro suficiente ! Recomendo dividir no Cartão :)')
 
     navigate(`/payout/${user!.id}`)
   }
   
-  // useLayoutEffect => You only want to use this hook when you need to do any DOM changes directly.
-  // This hook is optimized, to allow the engineer to make changes to a DOM node directly before the browser has a chance to paint.
-  useLayoutEffect(() => {
-    // Show IconPrint from Sidebar
-    if (headerIconPrintRef?.current?.style.display === 'none' || asideIconPrintRef?.current?.style.display === 'none') {
-      if (headerIconPrintRef.current) headerIconPrintRef.current.style.display = 'block'
-      if (asideIconPrintRef.current) asideIconPrintRef.current.style.display = 'block'
-    }
-
-  }, [])
-
   // Loading Component
   if(!cart) return <Loading />
 

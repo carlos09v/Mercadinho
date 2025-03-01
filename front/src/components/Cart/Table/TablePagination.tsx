@@ -1,4 +1,4 @@
-import { TablePaginationProps } from "../../@types/web"
+import { TablePaginationProps } from "../../../@types/web"
 
 const Pagination = ({ totalProducts, productsPerPage, setCurrentPage, currentPage }: TablePaginationProps) => {
     /* https://www.youtube.com/watch?v=wAGIOCqS8tk&ab_channel=CodeBlessYou */

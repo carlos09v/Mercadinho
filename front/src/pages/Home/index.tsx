@@ -2,7 +2,7 @@ import HeaderHome from "../../components/HeaderHome"
 import { useEffect, useLayoutEffect, useRef, useState, useContext } from "react"
 import { motion } from 'framer-motion'
 
-import { toys2Img, foodImg, headphoneImg ,shampoosImg, shoeImg, watchesImg, fruitsImg, toys1Img, controllersImg, patinsImg, snacksImg, drinksImg } from '../../assets/HomeGallery'
+import { toys2Img, foodImg, headphoneImg, shampoosImg, shoeImg, watchesImg, fruitsImg, toys1Img, controllersImg, patinsImg, snacksImg, drinksImg } from './Gallery'
 import HomeSvg from '../../assets/unDrawPics/sweet_home.svg'
 import { CountContext } from "../../contexts/CountContext"
 import './Home.css'
@@ -12,14 +12,12 @@ const Home = () => {
   const images = [toys2Img, toys2Img, toys2Img, toys2Img, toys2Img, foodImg, headphoneImg, shoeImg, watchesImg, fruitsImg, toys1Img, controllersImg, shampoosImg, patinsImg, snacksImg, drinksImg]
   const carousel = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
-  const { countCart, countUser, getCartsCount, getUsersCount } = useContext(CountContext)
+  const { countCart, countUser, getUsersCount, getCartsCount } = useContext(CountContext)
 
   useEffect(() => {
-    if(!countUser || !countCart ) {
-      // getUsersCount()
-      // getCartsCount()
-    }
-  }, [])
+    if (!countUser) getUsersCount();
+    if (!countCart) getCartsCount();
+  }, []);
 
   // useLayoutEffect => You only want to use this hook when you need to do any DOM changes directly.
   // This hook is optimized, to allow the engineer to make changes to a DOM node directly before the browser has a chance to paint.
@@ -29,8 +27,8 @@ const Home = () => {
     if (carousel?.current) {
       setWidth(carousel.current.scrollWidth - carousel.current.offsetWidth)
     }
-  }, [])
-  
+  }, [images])
+
 
   return (
     <>
@@ -41,13 +39,13 @@ const Home = () => {
           <div className="dark:text-whiteModified text-blackModified">
             <h1 className="border-none !text-4xl">Simulando um</h1>
             <h1 className="border-[#111218] dark:border-blue-400 !text-5xl">E-commerce</h1>
-            
-            <div className="flex gap-3 mt-6 font-semibold">
+
+            <div className="flex gap-6 mt-6 font-semibold">
               <p className="button-85">Contas criadas: <span className="text-2xl ml-3 bg-clip-text text-transparent bg-gradient-to-b from-green-500 to-[#FFB03A]">{countUser}</span></p>
               <p className="button-85">Produtos criados: <span className="text-2xl ml-3 bg-clip-text text-transparent bg-gradient-to-b from-green-500 to-[#FFB03A]">{countCart}</span></p>
             </div>
           </div>
-          
+
 
           <div>
             <img className="w-[400px]" src={HomeSvg} alt="HomeSvg" />
